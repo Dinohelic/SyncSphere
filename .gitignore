@@ -1,0 +1,38 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Android
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+
+# Kotlin
+captures/
+.externalNativeBuild/
+
+# Node
+backend/node_modules/
+
+# Env
+.env
+
+# Mac
+.DS_Store
+
+# Generated
+*.log
