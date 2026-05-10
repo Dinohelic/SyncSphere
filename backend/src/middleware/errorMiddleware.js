@@ -1,17 +1,18 @@
-const { ZodError } = require('zod');
-
 const errorHandler = (err, req, res, next) => {
   console.error(err);
 
-  if (err instanceof ZodError) {
+  if (err?.issues && Array.isArray(err.issues)) {
     return res.status(400).json({
+      success: false,
       message: 'Validation failed',
-      errors: err.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
+      issues: err.issues,
     });
   }
 
-  res.status(500).json({ message: 'Internal server error' });
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || "Server Error",
+  });
 };
 
 module.exports = errorHandler;
-

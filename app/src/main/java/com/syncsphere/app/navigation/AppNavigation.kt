@@ -7,6 +7,7 @@ import androidx.navigation.compose.rememberNavController
 import com.syncsphere.app.ui.auth.LoginScreen
 import com.syncsphere.app.ui.auth.RegisterScreen
 import com.syncsphere.app.ui.auth.SplashScreen
+import com.syncsphere.app.ui.tasks.TaskFormScreen
 
 @Composable
 fun AppNavigation() {
@@ -22,7 +23,10 @@ fun AppNavigation() {
             RegisterScreen(navController)
         }
         composable(Routes.MAIN) {
-            MainScreen()
+            MainScreen(mainNavController = navController)
+        }
+        composable(Routes.TASK_FORM) {
+            TaskFormScreen(navController)
         }
     }
 }

@@ -10,5 +10,6 @@ object Routes {
     const val EVENTS = "events"
     const val PROFILE = "profile"
     const val MAIN = "main"
+    const val TASK_FORM = "task_form"
 }
 
