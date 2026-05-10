@@ -8,7 +8,7 @@ const normalizeAuthBody = (body) => {
 
   return {
     fullName: source.fullName ?? source.full_name ?? source.fullname ?? source.name ?? '',
-    email: source.email ?? '',
+    email: (source.email ?? '').toString().trim(),
     password: source.password ?? '',
   };
 };
@@ -54,8 +54,9 @@ const loginUser = async (req, res, next) => {
   try {
     const validatedData = loginSchema.parse(normalizeAuthBody(req.body));
 
-    const user = await prisma.user.findUnique({
-      where: { email: validatedData.email },
+    // use case-insensitive email lookup to avoid failing when user types different casing
+    const user = await prisma.user.findFirst({
+      where: { email: { equals: validatedData.email, mode: 'insensitive' } },
     });
 
     if (!user) {

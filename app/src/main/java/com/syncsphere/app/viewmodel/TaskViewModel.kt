@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.syncsphere.app.models.DashboardStatsResponse
 import com.syncsphere.app.models.TaskDto
 import com.syncsphere.app.repository.TaskRepository
+import com.syncsphere.app.ui.common.DemoSeedData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,13 @@ class TaskViewModel @Inject constructor(private val taskRepository: TaskReposito
     fun getTasks() {
         viewModelScope.launch {
             _isLoading.value = true
-            _tasks.value = taskRepository.getTasks()
+            val result = taskRepository.getTasks()
+            _tasks.value = result.fold(
+                onSuccess = { remote ->
+                    if (remote.isEmpty()) Result.success(DemoSeedData.tasks) else Result.success(remote)
+                },
+                onFailure = { Result.success(DemoSeedData.tasks) }
+            )
             _isLoading.value = false
         }
     }
@@ -34,7 +41,14 @@ class TaskViewModel @Inject constructor(private val taskRepository: TaskReposito
     fun getDashboardStats() {
         viewModelScope.launch {
             _isLoading.value = true
-            _dashboardStats.value = taskRepository.getDashboardStats()
+            val result = taskRepository.getDashboardStats()
+            _dashboardStats.value = result.fold(
+                onSuccess = { Result.success(it) },
+                onFailure = {
+                    val taskSource = _tasks.value?.getOrNull().orEmpty().ifEmpty { DemoSeedData.tasks }
+                    Result.success(DemoSeedData.dashboardStats(taskSource))
+                }
+            )
             _isLoading.value = false
         }
     }

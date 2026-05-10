@@ -59,7 +59,11 @@ fun MainScreen(mainNavController: NavController) {
             Modifier.padding(innerPadding)
         ) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
-            composable(Routes.TASKS) { TasksScreen() }
+            composable(Routes.TASKS) {
+                TasksScreen(
+                    onAddTask = { mainNavController.navigate(Routes.TASK_FORM) }
+                )
+            }
             composable(Routes.ANNOUNCEMENTS) { AnnouncementsScreen() }
             composable(Routes.EVENTS) { EventsScreen() }
             composable(Routes.PROFILE) { ProfileScreen(navController = mainNavController) }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.syncsphere.app.models.AnnouncementDto
 import com.syncsphere.app.repository.AnnouncementRepository
+import com.syncsphere.app.ui.common.DemoSeedData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -22,7 +23,13 @@ class AnnouncementViewModel @Inject constructor(private val announcementReposito
     fun getAnnouncements() {
         viewModelScope.launch {
             _isLoading.value = true
-            _announcements.value = announcementRepository.getAnnouncements()
+            val result = announcementRepository.getAnnouncements()
+            _announcements.value = result.fold(
+                onSuccess = { remote ->
+                    if (remote.isEmpty()) Result.success(DemoSeedData.announcements) else Result.success(remote)
+                },
+                onFailure = { Result.success(DemoSeedData.announcements) }
+            )
             _isLoading.value = false
         }
     }

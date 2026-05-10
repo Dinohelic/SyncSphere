@@ -1,22 +1,25 @@
 package com.syncsphere.app.ui.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import com.syncsphere.app.ui.theme.Dimens
 
 @Composable
-fun StatCard(title: String, value: String) {
+fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(8.dp)
+            .padding(Dimens.spacing_sm),
+        shape = MaterialTheme.shapes.medium
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = title, style = MaterialTheme.typography.labelMedium)
+        Column(modifier = Modifier.padding(Dimens.spacing)) {
+            Text(text = title, style = MaterialTheme.typography.labelSmall)
             Text(text = value, style = MaterialTheme.typography.headlineMedium)
         }
     }

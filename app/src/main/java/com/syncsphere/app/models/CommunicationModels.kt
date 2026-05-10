@@ -6,7 +6,8 @@ data class AnnouncementDto(
     val message: String,
     val pinned: Boolean,
     val createdAt: String,
-    val createdBy: CreatedBy
+    val createdBy: CreatedBy,
+    val priority: String = "NORMAL"
 )
 
 data class CreatedBy(

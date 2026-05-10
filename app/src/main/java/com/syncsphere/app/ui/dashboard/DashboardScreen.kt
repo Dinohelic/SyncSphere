@@ -1,19 +1,32 @@
 package com.syncsphere.app.ui.dashboard
 
-import com.syncsphere.app.ui.events.EventCard
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import com.syncsphere.app.ui.components.EmptyState
+import com.syncsphere.app.ui.theme.Dimens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.ListAlt
+import androidx.compose.material.icons.filled.Pending
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.syncsphere.app.models.AnnouncementDto
-import com.syncsphere.app.models.EventDto
-import com.syncsphere.app.models.TaskDto
-
+import com.syncsphere.app.ui.announcements.AnnouncementCard
+import com.syncsphere.app.ui.events.EventCard
+import com.syncsphere.app.ui.tasks.TaskCard
 import com.syncsphere.app.viewmodel.AnnouncementViewModel
 import com.syncsphere.app.viewmodel.EventViewModel
 import com.syncsphere.app.viewmodel.TaskViewModel
@@ -48,55 +61,94 @@ fun DashboardScreen(
                 }
             }
             else -> {
-                val announcementList = announcements?.getOrNull().orEmpty().take(3)
-                val eventList = events?.getOrNull().orEmpty().take(3)
-                val taskList = tasks?.getOrNull().orEmpty().take(3)
+                val announcementList = announcements?.getOrNull().orEmpty()
+                    .sortedWith(compareByDescending { it.pinned })
+                    .take(3)
+                val eventList = events?.getOrNull().orEmpty().sortedBy { it.eventDate }.take(3)
+                val taskList = tasks?.getOrNull().orEmpty().take(4)
 
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)
-                        .padding(16.dp)
+                        .padding(Dimens.spacing),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacing)
                 ) {
                     item {
-                        Column {
-                            Text("Good Morning!", style = MaterialTheme.typography.headlineSmall)
-                            Spacer(modifier = Modifier.height(16.dp))
-                            stats?.getOrNull()?.let { stat ->
-                                Row {
-                                    StatCard(title = "Total Tasks", value = stat.totalTasks.toString(), modifier = Modifier.weight(1f))
-                                    StatCard(title = "Completed", value = stat.completedTasks.toString(), modifier = Modifier.weight(1f))
+                        GreetingCard()
+                    }
+
+                    item {
+                        stats?.getOrNull()?.let { stat ->
+                            Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacing_sm)) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spacing_sm)) {
+                                    DashboardStatCard(
+                                        title = "Total",
+                                        value = stat.totalTasks.toString(),
+                                        icon = Icons.Default.ListAlt,
+                                        color = Color(0xFF2563EB),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    DashboardStatCard(
+                                        title = "Completed",
+                                        value = stat.completedTasks.toString(),
+                                        icon = Icons.Default.CheckCircle,
+                                        color = Color(0xFF1B8A5A),
+                                        modifier = Modifier.weight(1f)
+                                    )
                                 }
-                                Row {
-                                    StatCard(title = "Pending", value = stat.pendingTasks.toString(), modifier = Modifier.weight(1f))
-                                    StatCard(title = "High Priority", value = stat.highPriorityTasks.toString(), modifier = Modifier.weight(1f))
+                                Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spacing_sm)) {
+                                    DashboardStatCard(
+                                        title = "Pending",
+                                        value = stat.pendingTasks.toString(),
+                                        icon = Icons.Default.Pending,
+                                        color = Color(0xFFD97706),
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    DashboardStatCard(
+                                        title = "High Priority",
+                                        value = stat.highPriorityTasks.toString(),
+                                        icon = Icons.Default.Bolt,
+                                        color = Color(0xFFDC2626),
+                                        modifier = Modifier.weight(1f)
+                                    )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text("Recent Announcements", style = MaterialTheme.typography.headlineSmall)
                         }
                     }
 
-                    items(announcementList) { announcement ->
-                        AnnouncementCard(announcement = announcement)
-                    }
-
                     item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Upcoming Events", style = MaterialTheme.typography.headlineSmall)
+                        SectionTitle("Recent Tasks")
                     }
 
-                    items(eventList) { event ->
-                        EventCard(event = event)
+                    if (taskList.isEmpty()) {
+                        item { EmptyState(title = "No active tasks", subtitle = "Tasks assigned to your team will show up here.") }
+                    } else {
+                        items(taskList, key = { it.id }) { task ->
+                            TaskCard(task = task)
+                        }
                     }
 
-                    item {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text("Recent Tasks", style = MaterialTheme.typography.headlineSmall)
+                    item { SectionTitle("Announcements") }
+
+                    if (announcementList.isEmpty()) {
+                        item {
+                            EmptyState(title = "No announcements", subtitle = "Team updates are quiet at the moment.")
+                        }
+                    } else {
+                        items(announcementList, key = { it.id }) { announcement ->
+                            AnnouncementCard(announcement = announcement)
+                        }
                     }
 
-                    items(taskList) { task ->
-                        TaskCard(task = task)
+                    item { SectionTitle("Upcoming Events") }
+
+                    if (eventList.isEmpty()) {
+                        item { EmptyState(title = "No events scheduled", subtitle = "Upcoming milestones will appear here soon.") }
+                    } else {
+                        items(eventList, key = { it.id }) { event ->
+                            EventCard(event = event)
+                        }
                     }
                 }
             }
@@ -105,71 +157,71 @@ fun DashboardScreen(
 }
 
 @Composable
-fun StatCard(title: String, value: String, modifier: Modifier = Modifier) {
+private fun GreetingCard() {
     Card(
-        modifier = modifier
-            .padding(8.dp)
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = title, style = MaterialTheme.typography.bodyMedium)
-            Text(text = value, style = MaterialTheme.typography.headlineMedium)
+        Box(
+            modifier = Modifier
+                .background(
+                    brush = Brush.linearGradient(
+                        colors = listOf(Color(0xFF0EA5E9), Color(0xFF2563EB))
+                    )
+                )
+                .padding(Dimens.spacing_lg)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.spacing_xs)) {
+                Text(
+                    text = "Welcome back",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+                Text(
+                    text = "SyncSphere Workspace",
+                    style = MaterialTheme.typography.headlineSmall,
+                    color = Color.White
+                )
+                Text(
+                    text = "Your team pulse for tasks, updates, and events.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.White.copy(alpha = 0.9f)
+                )
+            }
         }
     }
 }
 
 @Composable
-fun TaskCard(task: TaskDto) {
+private fun DashboardStatCard(
+    title: String,
+    value: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    color: Color,
+    modifier: Modifier = Modifier
+) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
+        modifier = modifier,
+        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.12f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = Dimens.card_elevation)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(text = task.title, style = MaterialTheme.typography.titleMedium)
-            task.description?.let { desc ->
-                Text(text = desc, style = MaterialTheme.typography.bodyMedium)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
+        Column(modifier = Modifier.padding(Dimens.spacing)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Priority: ${task.priority}", style = MaterialTheme.typography.bodySmall)
-                Text(text = "Status: ${task.status}", style = MaterialTheme.typography.bodySmall)
+                Text(text = title, style = MaterialTheme.typography.bodyMedium, color = color)
+                Icon(imageVector = icon, contentDescription = null, tint = color)
             }
-            task.dueDate?.let { dueDate ->
-                Text(text = "Due: $dueDate", style = MaterialTheme.typography.bodySmall)
-            }
+            Spacer(modifier = Modifier.height(Dimens.spacing_xs))
+            Text(text = value, style = MaterialTheme.typography.headlineSmall)
         }
     }
 }
 
 @Composable
-fun AnnouncementCard(announcement: AnnouncementDto) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp)
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-
-            Text(
-                text = announcement.title,
-                style = MaterialTheme.typography.titleMedium
-            )
-
-            Text(
-                text = announcement.message,
-                style = MaterialTheme.typography.bodyMedium
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = announcement.createdAt,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
+private fun SectionTitle(title: String) {
+    Text(text = title, style = MaterialTheme.typography.headlineSmall)
 }
