@@ -11,5 +11,7 @@ object Routes {
     const val PROFILE = "profile"
     const val MAIN = "main"
     const val TASK_FORM = "task_form"
+    const val ANNOUNCEMENT_FORM = "announcement_form"
+    const val EVENT_FORM = "event_form"
 }
 

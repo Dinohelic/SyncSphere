@@ -64,8 +64,16 @@ fun MainScreen(mainNavController: NavController) {
                     onAddTask = { mainNavController.navigate(Routes.TASK_FORM) }
                 )
             }
-            composable(Routes.ANNOUNCEMENTS) { AnnouncementsScreen() }
-            composable(Routes.EVENTS) { EventsScreen() }
+            composable(Routes.ANNOUNCEMENTS) {
+                AnnouncementsScreen(
+                    onAddAnnouncement = { mainNavController.navigate(Routes.ANNOUNCEMENT_FORM) }
+                )
+            }
+            composable(Routes.EVENTS) {
+                EventsScreen(
+                    onAddEvent = { mainNavController.navigate(Routes.EVENT_FORM) }
+                )
+            }
             composable(Routes.PROFILE) { ProfileScreen(navController = mainNavController) }
         }
     }

@@ -21,6 +21,7 @@ const createAnnouncement = async (req, res, next) => {
     const validatedData = announcementSchema.parse(req.body);
     const announcement = await prisma.announcement.create({
       data: { ...validatedData, createdById: req.user.userId },
+      include: { createdBy: { select: { fullName: true } } },
     });
     res.status(201).json(announcement);
   } catch (error) {
@@ -38,6 +39,7 @@ const updateAnnouncement = async (req, res, next) => {
     const updatedAnnouncement = await prisma.announcement.update({
       where: { id },
       data: validatedData,
+      include: { createdBy: { select: { fullName: true } } },
     });
     res.status(200).json(updatedAnnouncement);
   } catch (error) {

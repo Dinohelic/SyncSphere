@@ -7,6 +7,8 @@ import androidx.navigation.compose.rememberNavController
 import com.syncsphere.app.ui.auth.LoginScreen
 import com.syncsphere.app.ui.auth.RegisterScreen
 import com.syncsphere.app.ui.auth.SplashScreen
+import com.syncsphere.app.ui.announcements.CreateAnnouncementScreen
+import com.syncsphere.app.ui.events.CreateEventScreen
 import com.syncsphere.app.ui.tasks.TaskFormScreen
 
 @Composable
@@ -27,6 +29,12 @@ fun AppNavigation() {
         }
         composable(Routes.TASK_FORM) {
             TaskFormScreen(navController)
+        }
+        composable(Routes.ANNOUNCEMENT_FORM) {
+            CreateAnnouncementScreen(navController)
+        }
+        composable(Routes.EVENT_FORM) {
+            CreateEventScreen(navController)
         }
     }
 }

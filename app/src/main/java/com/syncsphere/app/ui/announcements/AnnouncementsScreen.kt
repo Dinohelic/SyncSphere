@@ -98,7 +98,8 @@ fun AnnouncementsScreen(
 
 @Composable
 fun AnnouncementCard(announcement: AnnouncementDto) {
-    val indicatorColor = priorityColor(announcement.priority)
+    val priorityText = (announcement.priority ?: "NORMAL").uppercase()
+    val indicatorColor = priorityColor(priorityText)
 
     Card(
         modifier = Modifier
@@ -133,13 +134,13 @@ fun AnnouncementCard(announcement: AnnouncementDto) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "By ${announcement.createdBy.fullName}",
+                    text = "By ${announcement.createdBy?.fullName ?: "Unknown"}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 AssistChip(
                     onClick = {},
-                    label = { Text(announcement.priority.uppercase()) },
+                    label = { Text(priorityText) },
                     colors = AssistChipDefaults.assistChipColors(
                         containerColor = indicatorColor.copy(alpha = 0.14f),
                         labelColor = indicatorColor

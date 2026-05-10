@@ -154,7 +154,10 @@ fun TaskCard(task: com.syncsphere.app.models.TaskDto) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(text = task.assignedUser ?: "Unassigned", style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        text = task.assignedUser ?: task.assignedTo?.fullName ?: "Unassigned",
+                        style = MaterialTheme.typography.bodySmall
+                    )
                 }
             }
         }
