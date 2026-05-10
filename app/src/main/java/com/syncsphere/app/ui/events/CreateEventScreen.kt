@@ -56,6 +56,7 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun CreateEventScreen(
     navController: NavController,
+    eventId: String? = null,
     eventViewModel: EventViewModel = hiltViewModel()
 ) {
     var title by remember { mutableStateOf("") }
@@ -68,9 +69,14 @@ fun CreateEventScreen(
     val isLoading by eventViewModel.isLoading.collectAsState()
     val createState by eventViewModel.createEventState.collectAsState()
     val errorMessage by eventViewModel.errorMessage.collectAsState()
+    val events by eventViewModel.events.collectAsState()
 
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val isEditMode = !eventId.isNullOrBlank()
+    var hasPrefilled by remember(eventId) { mutableStateOf(false) }
+
+    val currentEvent = events?.getOrNull()?.firstOrNull { it.id == eventId }
 
     val titleError = title.isBlank()
     val venueError = venue.isBlank()
@@ -81,12 +87,38 @@ fun CreateEventScreen(
     val displayFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
 
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { snackbarHostState.showSnackbar(it) }
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            eventViewModel.clearOperationStates()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (isEditMode) {
+            eventViewModel.getEvents()
+        }
+    }
+
+    LaunchedEffect(currentEvent?.id) {
+        val event = currentEvent ?: return@LaunchedEffect
+        if (!hasPrefilled) {
+            title = event.title
+            venue = event.venue
+            description = event.description.orEmpty()
+            eventDateIso = event.eventDate
+            dateDisplay = try {
+                java.time.OffsetDateTime.parse(event.eventDate).format(displayFormatter)
+            } catch (_: Exception) {
+                event.eventDate.take(10)
+            }
+            hasPrefilled = true
+        }
     }
 
     LaunchedEffect(createState) {
         createState?.onSuccess {
-            snackbarHostState.showSnackbar("Event created")
+            snackbarHostState.showSnackbar(if (isEditMode) "Event updated" else "Event created")
+            eventViewModel.clearOperationStates()
             eventViewModel.getEvents()
             navController.popBackStack()
         }
@@ -211,14 +243,17 @@ fun CreateEventScreen(
                 onClick = {
                     focusManager.clearFocus()
                     if (isValid) {
-                        eventViewModel.createEvent(
-                            CreateEventRequest(
-                                title = title.trim(),
-                                venue = venue.trim(),
-                                description = description.trim().ifBlank { null },
-                                eventDate = eventDateIso!!
-                            )
+                        val request = CreateEventRequest(
+                            title = title.trim(),
+                            venue = venue.trim(),
+                            description = description.trim().ifBlank { null },
+                            eventDate = eventDateIso!!
                         )
+                        if (isEditMode && eventId != null) {
+                            eventViewModel.updateEvent(eventId, request)
+                        } else {
+                            eventViewModel.createEvent(request)
+                        }
                     }
                 },
                 enabled = isValid && !isLoading,
@@ -227,7 +262,7 @@ fun CreateEventScreen(
                 if (isLoading) {
                     CircularProgressIndicator(strokeWidth = 2.dp)
                 } else {
-                    Text("Create Event")
+                    Text(if (isEditMode) "Update Event" else "Create Event")
                 }
             }
         }

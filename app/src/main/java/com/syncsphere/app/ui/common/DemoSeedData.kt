@@ -2,6 +2,7 @@ package com.syncsphere.app.ui.common
 
 import com.syncsphere.app.models.AnnouncementDto
 import com.syncsphere.app.models.CreatedBy
+import com.syncsphere.app.models.AssignedMemberDto
 import com.syncsphere.app.models.DashboardStatsResponse
 import com.syncsphere.app.models.EventDto
 import com.syncsphere.app.models.TaskDto
@@ -16,7 +17,10 @@ object DemoSeedData {
             priority = "HIGH",
             status = "IN_PROGRESS",
             dueDate = "2026-05-14T10:00:00.000Z",
-            assignedUser = "Ariana Lee"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-1", "Ariana Lee", "ariana@example.com", "ADMIN"),
+                AssignedMemberDto("user-2", "Maya Chen", "maya@example.com", "MEMBER")
+            )
         ),
         TaskDto(
             id = "task-2",
@@ -25,7 +29,9 @@ object DemoSeedData {
             priority = "HIGH",
             status = "TODO",
             dueDate = "2026-05-12T16:30:00.000Z",
-            assignedUser = "Rohan Patel"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-3", "Rohan Patel", "rohan@example.com", "MEMBER")
+            )
         ),
         TaskDto(
             id = "task-3",
@@ -34,7 +40,9 @@ object DemoSeedData {
             priority = "MEDIUM",
             status = "IN_PROGRESS",
             dueDate = "2026-05-18T09:00:00.000Z",
-            assignedUser = "Maya Chen"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-2", "Maya Chen", "maya@example.com", "MEMBER")
+            )
         ),
         TaskDto(
             id = "task-4",
@@ -43,7 +51,9 @@ object DemoSeedData {
             priority = "LOW",
             status = "COMPLETED",
             dueDate = "2026-05-10T08:00:00.000Z",
-            assignedUser = "Noah Kim"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-4", "Noah Kim", "noah@example.com", "MEMBER")
+            )
         ),
         TaskDto(
             id = "task-5",
@@ -52,7 +62,9 @@ object DemoSeedData {
             priority = "MEDIUM",
             status = "TODO",
             dueDate = "2026-05-16T12:00:00.000Z",
-            assignedUser = "Sarah Ali"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-5", "Sarah Ali", "sarah@example.com", "MEMBER")
+            )
         ),
         TaskDto(
             id = "task-6",
@@ -61,7 +73,9 @@ object DemoSeedData {
             priority = "HIGH",
             status = "IN_PROGRESS",
             dueDate = "2026-05-20T11:00:00.000Z",
-            assignedUser = "Ethan Clark"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-6", "Ethan Clark", "ethan@example.com", "ADMIN")
+            )
         ),
         TaskDto(
             id = "task-7",
@@ -70,7 +84,9 @@ object DemoSeedData {
             priority = "LOW",
             status = "COMPLETED",
             dueDate = "2026-05-09T15:00:00.000Z",
-            assignedUser = "Ariana Lee"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-1", "Ariana Lee", "ariana@example.com", "ADMIN")
+            )
         ),
         TaskDto(
             id = "task-8",
@@ -79,7 +95,9 @@ object DemoSeedData {
             priority = "MEDIUM",
             status = "TODO",
             dueDate = "2026-05-22T14:00:00.000Z",
-            assignedUser = "Rohan Patel"
+            assignedMembers = listOf(
+                AssignedMemberDto("user-3", "Rohan Patel", "rohan@example.com", "MEMBER")
+            )
         )
     )
 

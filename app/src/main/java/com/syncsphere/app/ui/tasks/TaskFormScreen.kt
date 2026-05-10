@@ -3,28 +3,38 @@ package com.syncsphere.app.ui.tasks
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -33,13 +43,12 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,58 +62,110 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.syncsphere.app.models.CreateTaskRequest
+import com.syncsphere.app.models.TaskDto
+import com.syncsphere.app.models.UpdateTaskRequest
 import com.syncsphere.app.models.UserResponse
 import com.syncsphere.app.viewmodel.TaskViewModel
 import java.time.Instant
+import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun TaskFormScreen(navController: NavController, taskViewModel: TaskViewModel = hiltViewModel()) {
+fun TaskFormScreen(
+    navController: NavController,
+    taskId: String? = null,
+    taskViewModel: TaskViewModel = hiltViewModel()
+) {
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var selectedPriority by remember { mutableStateOf("MEDIUM") }
     var selectedStatus by remember { mutableStateOf("TODO") }
     var selectedDueDateIso by remember { mutableStateOf<String?>(null) }
     var selectedDueDisplay by remember { mutableStateOf("") }
-    var selectedUserId by remember { mutableStateOf("") }
-    var selectedUserLabel by remember { mutableStateOf("") }
+    val selectedMembers = remember { mutableStateListOf<UserResponse>() }
 
+    val tasks by taskViewModel.tasks.collectAsState()
     val isLoading by taskViewModel.isLoading.collectAsState()
     val usersResult by taskViewModel.users.collectAsState()
     val usersLoading by taskViewModel.isUsersLoading.collectAsState()
-    val users = usersResult?.getOrNull() ?: emptyList<UserResponse>()
+    val users = usersResult?.getOrNull().orEmpty()
     val errorMessage by taskViewModel.errorMessage.collectAsState()
-    val createTaskState by taskViewModel.createTaskState.collectAsState()
+    val mutationState by taskViewModel.mutationState.collectAsState()
+    val createState by taskViewModel.createTaskState.collectAsState()
 
     var priorityExpanded by remember { mutableStateOf(false) }
     var statusExpanded by remember { mutableStateOf(false) }
-    var userExpanded by remember { mutableStateOf(false) }
+    var assigneeExpanded by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var hasPrefilled by remember(taskId) { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState()
-    val displayFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy") }
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val displayFormatter = remember { DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault()) }
+    val isEditMode = !taskId.isNullOrBlank()
+    val currentTask = tasks?.getOrNull()?.firstOrNull { it.id == taskId }
 
     val titleError = title.isBlank()
-    val userError = selectedUserId.isBlank()
-    val isFormValid = !titleError && !userError
+    val assigneeError = selectedMembers.isEmpty()
+    val isFormValid = title.isNotBlank() && selectedMembers.isNotEmpty()
 
     LaunchedEffect(Unit) {
         taskViewModel.getUsers()
+        if (isEditMode) {
+            taskViewModel.getTasks()
+        }
+    }
+
+    LaunchedEffect(currentTask?.id) {
+        val task = currentTask ?: return@LaunchedEffect
+        if (!hasPrefilled) {
+            title = task.title
+            description = task.description.orEmpty()
+            selectedPriority = task.priority.uppercase()
+            selectedStatus = task.status.uppercase()
+            selectedDueDateIso = task.dueDate
+            selectedDueDisplay = task.dueDate?.let {
+                try {
+                    OffsetDateTime.parse(it).format(displayFormatter)
+                } catch (_: Exception) {
+                    it.take(10)
+                }
+            }.orEmpty()
+            selectedMembers.clear()
+            if (task.assignedMembers.isNotEmpty()) {
+                selectedMembers.addAll(task.assignedMembers.map {
+                    UserResponse(it.id, it.fullName, it.email, it.role)
+                })
+            } else if (task.assignedToId != null && task.assignedTo != null) {
+                selectedMembers.add(
+                    UserResponse(
+                        id = task.assignedToId,
+                        fullName = task.assignedTo.fullName.orEmpty(),
+                        email = task.assignedTo.email.orEmpty(),
+                        role = "MEMBER"
+                    )
+                )
+            }
+            hasPrefilled = true
+        }
+    }
+
+    LaunchedEffect(createState, mutationState) {
+        if (mutationState?.getOrNull() == null && createState?.getOrNull() == null) return@LaunchedEffect
+        snackbarHostState.showSnackbar(if (isEditMode) "Task updated" else "Task created")
+        taskViewModel.clearTaskStates()
+        taskViewModel.getTasks()
+        navController.popBackStack()
     }
 
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { snackbarHostState.showSnackbar(it) }
-    }
-
-    LaunchedEffect(createTaskState) {
-        createTaskState?.onSuccess {
-            snackbarHostState.showSnackbar("Task created")
-            taskViewModel.getTasks()
-            navController.popBackStack()
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            taskViewModel.clearTaskStates()
         }
     }
 
@@ -133,7 +194,9 @@ fun TaskFormScreen(navController: NavController, taskViewModel: TaskViewModel = 
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Create Task") }) },
+        topBar = {
+            TopAppBar(title = { Text(if (isEditMode) "Edit Task" else "Create Task") })
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
@@ -250,41 +313,67 @@ fun TaskFormScreen(navController: NavController, taskViewModel: TaskViewModel = 
                     }
             )
 
-            ExposedDropdownMenuBox(expanded = userExpanded, onExpandedChange = { userExpanded = it }) {
-                OutlinedTextField(
-                    value = selectedUserLabel,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Assign To") },
-                    leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = userExpanded) },
-                    isError = userError,
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
+            Text("Assign members", style = MaterialTheme.typography.titleSmall)
+            OutlinedTextField(
+                value = if (selectedMembers.isEmpty()) "Select team members" else "${selectedMembers.size} member(s) selected",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Members") },
+                leadingIcon = { Icon(Icons.Default.Person, contentDescription = null) },
+                trailingIcon = {
+                    IconButton(onClick = { assigneeExpanded = !assigneeExpanded }) {
+                        Icon(Icons.Default.Person, contentDescription = "Toggle members")
+                    }
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { assigneeExpanded = true }
+            )
+            if (assigneeExpanded) {
                 DropdownMenu(
-                    expanded = userExpanded,
-                    onDismissRequest = { userExpanded = false }
+                    expanded = assigneeExpanded,
+                    onDismissRequest = { assigneeExpanded = false }
                 ) {
                     if (usersLoading) {
                         DropdownMenuItem(text = { Text("Loading users...") }, onClick = {})
-                    } else if (users.isEmpty()) {
-                        DropdownMenuItem(text = { Text("No users available") }, onClick = { userExpanded = false })
                     } else {
                         users.forEach { user ->
+                            val isSelected = selectedMembers.any { it.id == user.id }
                             DropdownMenuItem(
                                 text = { Text("${user.fullName} (${user.email})") },
+                                leadingIcon = {
+                                    if (isSelected) {
+                                        Icon(Icons.Default.Check, contentDescription = null)
+                                    }
+                                },
                                 onClick = {
-                                    selectedUserId = user.id
-                                    selectedUserLabel = user.fullName
-                                    userExpanded = false
+                                    val current = selectedMembers.indexOfFirst { it.id == user.id }
+                                    if (current >= 0) {
+                                        selectedMembers.removeAt(current)
+                                    } else {
+                                        selectedMembers.add(user)
+                                    }
                                 }
                             )
                         }
                     }
                 }
             }
-            if (userError) {
-                Text("Please assign a user", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            if (assigneeError) {
+                Text("Select at least one member", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+            }
+            if (selectedMembers.isNotEmpty()) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    selectedMembers.forEach { user ->
+                        AssistChip(
+                            onClick = {
+                                selectedMembers.removeAll { it.id == user.id }
+                            },
+                            label = { Text(user.fullName) },
+                            leadingIcon = { Icon(Icons.Default.Close, contentDescription = null) }
+                        )
+                    }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -292,26 +381,42 @@ fun TaskFormScreen(navController: NavController, taskViewModel: TaskViewModel = 
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    if (isFormValid) {
-                        taskViewModel.createTask(
-                            CreateTaskRequest(
-                                title = title.trim(),
-                                description = description.trim().ifBlank { null },
-                                priority = selectedPriority,
-                                status = selectedStatus,
-                                dueDate = selectedDueDateIso,
-                                assignedToId = selectedUserId
-                            )
+                    val request = if (isEditMode) {
+                        UpdateTaskRequest(
+                            title = title.trim(),
+                            description = description.trim().ifBlank { null },
+                            priority = selectedPriority,
+                            status = selectedStatus,
+                            dueDate = selectedDueDateIso,
+                            assignedToIds = selectedMembers.map { it.id }
                         )
+                    } else {
+                        null
+                    }
+                    if (isFormValid) {
+                        if (isEditMode && taskId != null && request != null) {
+                            taskViewModel.updateTask(taskId, request)
+                        } else {
+                            taskViewModel.createTask(
+                                CreateTaskRequest(
+                                    title = title.trim(),
+                                    description = description.trim().ifBlank { null },
+                                    priority = selectedPriority,
+                                    status = selectedStatus,
+                                    dueDate = selectedDueDateIso,
+                                    assignedToIds = selectedMembers.map { it.id }
+                                )
+                            )
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isFormValid && !isLoading
             ) {
                 if (isLoading) {
-                    CircularProgressIndicator(strokeWidth = 2.dp)
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Create Task")
+                    Text(if (isEditMode) "Update Task" else "Create Task")
                 }
             }
         }

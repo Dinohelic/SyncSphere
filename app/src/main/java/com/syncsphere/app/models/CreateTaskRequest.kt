@@ -6,5 +6,5 @@ data class CreateTaskRequest(
     val priority: String = "MEDIUM",
     val status: String = "TODO",
     val dueDate: String? = null,
-    val assignedToId: String
+    val assignedToIds: List<String>
 )

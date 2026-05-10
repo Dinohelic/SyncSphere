@@ -9,9 +9,9 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class BottomNavItem(val route: String, val icon: ImageVector, val title: String) {
-    object Dashboard : BottomNavItem(Routes.DASHBOARD, Icons.Default.Dashboard, "Dashboard")
+    object Dashboard : BottomNavItem(Routes.DASHBOARD, Icons.Default.Dashboard, "Home")
     object Tasks : BottomNavItem(Routes.TASKS, Icons.Default.List, "Tasks")
-    object Announcements : BottomNavItem(Routes.ANNOUNCEMENTS, Icons.Default.Campaign, "Announcements")
+    object Announcements : BottomNavItem(Routes.ANNOUNCEMENTS, Icons.Default.Campaign, "Updates")
     object Events : BottomNavItem(Routes.EVENTS, Icons.Default.Event, "Events")
     object Profile : BottomNavItem(Routes.PROFILE, Icons.Default.Person, "Profile")
 }

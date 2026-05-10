@@ -45,6 +45,7 @@ import com.syncsphere.app.viewmodel.AnnouncementViewModel
 @Composable
 fun CreateAnnouncementScreen(
     navController: NavController,
+    announcementId: String? = null,
     announcementViewModel: AnnouncementViewModel = hiltViewModel()
 ) {
     var title by remember { mutableStateOf("") }
@@ -54,21 +55,46 @@ fun CreateAnnouncementScreen(
     val isLoading by announcementViewModel.isLoading.collectAsState()
     val createState by announcementViewModel.createAnnouncementState.collectAsState()
     val errorMessage by announcementViewModel.errorMessage.collectAsState()
+    val announcements by announcementViewModel.announcements.collectAsState()
 
     val focusManager = LocalFocusManager.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val isEditMode = !announcementId.isNullOrBlank()
+    var hasPrefilled by remember(announcementId) { mutableStateOf(false) }
+
+    val currentAnnouncement = announcements?.getOrNull()?.firstOrNull { it.id == announcementId }
 
     val titleError = title.isBlank()
     val messageError = message.isBlank()
     val isValid = !titleError && !messageError
 
     LaunchedEffect(errorMessage) {
-        errorMessage?.let { snackbarHostState.showSnackbar(it) }
+        errorMessage?.let {
+            snackbarHostState.showSnackbar(it)
+            announcementViewModel.clearOperationStates()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (isEditMode) {
+            announcementViewModel.getAnnouncements()
+        }
+    }
+
+    LaunchedEffect(currentAnnouncement?.id) {
+        val announcement = currentAnnouncement ?: return@LaunchedEffect
+        if (!hasPrefilled) {
+            title = announcement.title
+            message = announcement.message
+            pinned = announcement.pinned
+            hasPrefilled = true
+        }
     }
 
     LaunchedEffect(createState) {
         createState?.onSuccess {
-            snackbarHostState.showSnackbar("Announcement created")
+            snackbarHostState.showSnackbar(if (isEditMode) "Announcement updated" else "Announcement created")
+            announcementViewModel.clearOperationStates()
             announcementViewModel.getAnnouncements()
             navController.popBackStack()
         }
@@ -138,13 +164,16 @@ fun CreateAnnouncementScreen(
                 onClick = {
                     focusManager.clearFocus()
                     if (isValid) {
-                        announcementViewModel.createAnnouncement(
-                            CreateAnnouncementRequest(
-                                title = title.trim(),
-                                message = message.trim(),
-                                pinned = pinned
-                            )
+                        val request = CreateAnnouncementRequest(
+                            title = title.trim(),
+                            message = message.trim(),
+                            pinned = pinned
                         )
+                        if (isEditMode && announcementId != null) {
+                            announcementViewModel.updateAnnouncement(announcementId, request)
+                        } else {
+                            announcementViewModel.createAnnouncement(request)
+                        }
                     }
                 },
                 enabled = isValid && !isLoading,
@@ -153,7 +182,7 @@ fun CreateAnnouncementScreen(
                 if (isLoading) {
                     CircularProgressIndicator(strokeWidth = 2.dp)
                 } else {
-                    Text("Create Announcement")
+                    Text(if (isEditMode) "Update Announcement" else "Create Announcement")
                 }
             }
         }

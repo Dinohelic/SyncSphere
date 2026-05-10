@@ -8,6 +8,7 @@ import com.syncsphere.app.repository.TaskRepository
 import com.syncsphere.app.repository.UserRepository
 import com.syncsphere.app.models.CreateTaskRequest
 import com.syncsphere.app.models.UserResponse
+import com.syncsphere.app.models.UpdateTaskRequest
 import com.syncsphere.app.ui.common.DemoSeedData
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +36,12 @@ class TaskViewModel @Inject constructor(
 
     private val _createTaskState = MutableStateFlow<Result<TaskDto>?>(null)
     val createTaskState: StateFlow<Result<TaskDto>?> = _createTaskState
+
+    private val _mutationState = MutableStateFlow<Result<TaskDto>?>(null)
+    val mutationState: StateFlow<Result<TaskDto>?> = _mutationState
+
+    private val _deleteState = MutableStateFlow<Result<Unit>?>(null)
+    val deleteState: StateFlow<Result<Unit>?> = _deleteState
 
     private val _isUsersLoading = MutableStateFlow(false)
     val isUsersLoading: StateFlow<Boolean> = _isUsersLoading
@@ -71,6 +78,7 @@ class TaskViewModel @Inject constructor(
             _errorMessage.value = null
             val result = taskRepository.createTask(createTaskRequest)
             _createTaskState.value = result
+            _mutationState.value = result
             result.fold(
                 onSuccess = {
                     _tasks.value = Result.success((_tasks.value?.getOrNull() ?: emptyList()) + it)
@@ -79,6 +87,42 @@ class TaskViewModel @Inject constructor(
                     _errorMessage.value = error.message ?: "Failed to create task"
                 }
             )
+            _isLoading.value = false
+        }
+    }
+
+    fun updateTask(taskId: String, updateTaskRequest: UpdateTaskRequest) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val result = taskRepository.updateTask(taskId, updateTaskRequest)
+            _mutationState.value = result
+            result.fold(
+                onSuccess = { updated ->
+                    val current = _tasks.value?.getOrNull().orEmpty().toMutableList()
+                    val index = current.indexOfFirst { it.id == updated.id }
+                    if (index >= 0) current[index] = updated else current.add(0, updated)
+                    _tasks.value = Result.success(current)
+                },
+                onFailure = { error ->
+                    _errorMessage.value = error.message ?: "Failed to update task"
+                }
+            )
+            _isLoading.value = false
+        }
+    }
+
+    fun deleteTask(taskId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            val result = taskRepository.deleteTask(taskId)
+            _deleteState.value = result
+            if (result.isSuccess) {
+                _tasks.value = Result.success(_tasks.value?.getOrNull().orEmpty().filterNot { it.id == taskId })
+            } else {
+                _errorMessage.value = result.exceptionOrNull()?.message ?: "Failed to delete task"
+            }
             _isLoading.value = false
         }
     }
@@ -96,6 +140,13 @@ class TaskViewModel @Inject constructor(
             )
             _isLoading.value = false
         }
+    }
+
+    fun clearTaskStates() {
+        _createTaskState.value = null
+        _mutationState.value = null
+        _deleteState.value = null
+        _errorMessage.value = null
     }
 }
 

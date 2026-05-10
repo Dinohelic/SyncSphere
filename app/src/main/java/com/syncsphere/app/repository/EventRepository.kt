@@ -43,5 +43,31 @@ class EventRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun updateEvent(id: String, createEventRequest: CreateEventRequest): Result<EventDto> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.updateEvent(token, id, createEventRequest)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to update event"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteEvent(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.deleteEvent(token, id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to delete event"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 

@@ -40,4 +40,30 @@ class AnnouncementRepository @Inject constructor(
             Result.failure(e)
         }
     }
+
+    suspend fun updateAnnouncement(id: String, createAnnouncementRequest: CreateAnnouncementRequest): Result<AnnouncementDto> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.updateAnnouncement(token, id, createAnnouncementRequest)
+            if (response.isSuccessful && response.body() != null) {
+                Result.success(response.body()!!)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to update announcement"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun deleteAnnouncement(id: String): Result<Unit> = withContext(Dispatchers.IO) {
+        try {
+            val response = apiService.deleteAnnouncement(token, id)
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to delete announcement"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

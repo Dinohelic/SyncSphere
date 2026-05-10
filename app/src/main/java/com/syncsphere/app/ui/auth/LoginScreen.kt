@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import kotlinx.coroutines.launch
@@ -40,6 +41,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
     val loginState by authViewModel.loginState.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val emailError = email.isBlank()
@@ -73,84 +75,86 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
                 }
             }.onFailure {
                 val message = it.message ?: "Login failed"
-                // show snackbar with detailed message
-                launch { snackbarHostState.showSnackbar(message) }
+                scope.launch { snackbarHostState.showSnackbar(message) }
             }
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            shape = RoundedCornerShape(16.dp),
+    Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { paddingValues ->
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentAlignment = Alignment.Center
         ) {
-            Column(
+            Card(
+                shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
+                    .fillMaxWidth()
                     .padding(16.dp)
-                    .verticalScroll(rememberScrollState())
-                    .imePadding(),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Login", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(Dimens.spacing))
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    isError = emailError,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Email,
-                        imeAction = ImeAction.Next
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(rememberScrollState())
+                        .imePadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(text = "Login", style = MaterialTheme.typography.headlineMedium)
+                    Spacer(modifier = Modifier.height(Dimens.spacing))
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        isError = emailError,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Next
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                        )
                     )
-                )
-                if (emailError) {
-                    Text("Email is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
-                Spacer(modifier = Modifier.height(Dimens.spacing_sm))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    modifier = Modifier.fillMaxWidth(),
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true,
-                    isError = passwordError,
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = { submitLogin() }
+                    if (emailError) {
+                        Text("Email is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(modifier = Modifier.height(Dimens.spacing_sm))
+                    OutlinedTextField(
+                        value = password,
+                        onValueChange = { password = it },
+                        label = { Text("Password") },
+                        modifier = Modifier.fillMaxWidth(),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true,
+                        isError = passwordError,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = { submitLogin() }
+                        )
                     )
-                )
-                if (passwordError) {
-                    Text("Password is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    if (passwordError) {
+                        Text("Password is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    }
+                    Spacer(modifier = Modifier.height(Dimens.spacing))
+                    PrimaryButton(
+                        text = "Login",
+                        onClick = { submitLogin() },
+                        loading = isLoading,
+                        enabled = canSubmit
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Don't have an account? Register",
+                        modifier = Modifier.clickable { navController.navigate(Routes.REGISTER) }
+                    )
                 }
-                Spacer(modifier = Modifier.height(Dimens.spacing))
-                PrimaryButton(
-                    text = "Login",
-                    onClick = { submitLogin() },
-                    loading = isLoading,
-                    enabled = canSubmit
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Don't have an account? Register",
-                    modifier = Modifier.clickable { navController.navigate(Routes.REGISTER) }
-                )
             }
         }
-        SnackbarHost(snackbarHostState)
     }
 }
 
