@@ -20,6 +20,8 @@ import androidx.navigation.NavController
 import com.syncsphere.app.models.RegisterRequest
 import com.syncsphere.app.navigation.Routes
 import com.syncsphere.app.viewmodel.AuthViewModel
+import com.syncsphere.app.ui.components.PrimaryButton
+import com.syncsphere.app.ui.theme.Dimens
 
 @Composable
 fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = hiltViewModel()) {
@@ -60,21 +62,21 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(text = "Register", style = MaterialTheme.typography.headlineMedium)
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacing))
                 OutlinedTextField(
                     value = fullName,
                     onValueChange = { fullName = it },
                     label = { Text("Full Name") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacing_sm))
                 OutlinedTextField(
                     value = email,
                     onValueChange = { email = it },
                     label = { Text("Email") },
                     modifier = Modifier.fillMaxWidth()
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacing_sm))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
@@ -88,7 +90,7 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
                         }
                     }
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(Dimens.spacing_sm))
                 OutlinedTextField(
                     value = confirmPassword,
                     onValueChange = { confirmPassword = it },
@@ -96,28 +98,18 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
                     modifier = Modifier.fillMaxWidth(),
                     visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                 )
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(
-                    onClick = {
-                        if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
-                            if (password == confirmPassword) {
-                                authViewModel.register(RegisterRequest(fullName, email, password))
-                            } else {
-                                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-                            }
+                Spacer(modifier = Modifier.height(Dimens.spacing))
+                PrimaryButton(text = "Register", onClick = {
+                    if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
+                        if (password == confirmPassword) {
+                            authViewModel.register(RegisterRequest(fullName, email, password))
                         } else {
-                            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isLoading
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
                     } else {
-                        Text("Register")
+                        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
                     }
-                }
+                }, loading = isLoading)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = "Already have an account? Login",

@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.*
@@ -19,11 +20,11 @@ import com.syncsphere.app.ui.profile.ProfileScreen
 import com.syncsphere.app.ui.tasks.TasksScreen
 
 @Composable
-fun MainScreen() {
-    val navController = rememberNavController()
+fun MainScreen(mainNavController: NavController) {
+    val nestedNavController = rememberNavController()
     Scaffold(
         bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val navBackStackEntry by nestedNavController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
             val items = listOf(
                 BottomNavItem.Dashboard,
@@ -39,8 +40,8 @@ fun MainScreen() {
                         label = { Text(screen.title) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
-                            navController.navigate(screen.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
+                            nestedNavController.navigate(screen.route) {
+                                popUpTo(nestedNavController.graph.findStartDestination().id) {
                                     saveState = true
                                 }
                                 launchSingleTop = true
@@ -53,16 +54,19 @@ fun MainScreen() {
         }
     ) { innerPadding ->
         NavHost(
-            navController,
+            nestedNavController,
             startDestination = Routes.DASHBOARD,
             Modifier.padding(innerPadding)
         ) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
-            composable(Routes.TASKS) { TasksScreen() }
+            composable(Routes.TASKS) {
+                TasksScreen(
+                    onAddTask = { mainNavController.navigate(Routes.TASK_FORM) }
+                )
+            }
             composable(Routes.ANNOUNCEMENTS) { AnnouncementsScreen() }
             composable(Routes.EVENTS) { EventsScreen() }
-            composable(Routes.PROFILE) { ProfileScreen(navController = navController) }
+            composable(Routes.PROFILE) { ProfileScreen(navController = mainNavController) }
         }
     }
 }
-
