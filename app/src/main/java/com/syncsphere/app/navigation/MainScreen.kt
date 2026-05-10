@@ -5,6 +5,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,7 +38,7 @@ fun MainScreen(mainNavController: NavController) {
                 items.forEach { screen ->
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = null) },
-                        label = { Text(screen.title) },
+                        label = { Text(screen.title, style = MaterialTheme.typography.labelSmall) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
                             nestedNavController.navigate(screen.route) {
@@ -47,7 +48,8 @@ fun MainScreen(mainNavController: NavController) {
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        alwaysShowLabel = false
                     )
                 }
             }
@@ -61,11 +63,22 @@ fun MainScreen(mainNavController: NavController) {
             composable(Routes.DASHBOARD) { DashboardScreen() }
             composable(Routes.TASKS) {
                 TasksScreen(
-                    onAddTask = { mainNavController.navigate(Routes.TASK_FORM) }
+                    onAddTask = { mainNavController.navigate(Routes.TASK_FORM) },
+                    onEditTask = { taskId -> mainNavController.navigate("task_form_edit/$taskId") }
                 )
             }
-            composable(Routes.ANNOUNCEMENTS) { AnnouncementsScreen() }
-            composable(Routes.EVENTS) { EventsScreen() }
+            composable(Routes.ANNOUNCEMENTS) {
+                AnnouncementsScreen(
+                    onAddAnnouncement = { mainNavController.navigate(Routes.ANNOUNCEMENT_FORM) },
+                    onEditAnnouncement = { announcementId -> mainNavController.navigate("announcement_form_edit/$announcementId") }
+                )
+            }
+            composable(Routes.EVENTS) {
+                EventsScreen(
+                    onAddEvent = { mainNavController.navigate(Routes.EVENT_FORM) },
+                    onEditEvent = { eventId -> mainNavController.navigate("event_form_edit/$eventId") }
+                )
+            }
             composable(Routes.PROFILE) { ProfileScreen(navController = mainNavController) }
         }
     }

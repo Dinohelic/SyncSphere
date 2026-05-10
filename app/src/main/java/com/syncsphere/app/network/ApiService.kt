@@ -15,6 +15,9 @@ interface ApiService {
     @GET("api/tasks")
     suspend fun getTasks(@Header("Authorization") token: String): Response<List<TaskDto>>
 
+    @GET("api/users")
+    suspend fun getUsers(@Header("Authorization") token: String): Response<List<UserResponse>>
+
     @POST("api/tasks")
     suspend fun createTask(@Header("Authorization") token: String, @Body createTaskRequest: CreateTaskRequest): Response<TaskDto>
 

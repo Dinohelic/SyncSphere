@@ -5,13 +5,13 @@ data class AnnouncementDto(
     val title: String,
     val message: String,
     val pinned: Boolean,
-    val createdAt: String,
-    val createdBy: CreatedBy,
-    val priority: String = "NORMAL"
+    val createdAt: String? = null,
+    val createdBy: CreatedBy? = null,
+    val priority: String? = null
 )
 
 data class CreatedBy(
-    val fullName: String
+    val fullName: String? = null
 )
 
 data class EventDto(

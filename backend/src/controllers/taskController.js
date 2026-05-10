@@ -1,6 +1,17 @@
 const prisma = require('../config/prisma');
 const { taskSchema } = require('../validators/taskValidation');
 
+const taskInclude = {
+  assignedMembers: {
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+    },
+  },
+};
+
 const getTasks = async (req, res, next) => {
   try {
     const { user } = req;
@@ -8,12 +19,12 @@ const getTasks = async (req, res, next) => {
 
     if (user.role === 'ADMIN') {
       tasks = await prisma.task.findMany({
-        include: { assignedTo: true },
+        include: taskInclude,
       });
     } else {
       tasks = await prisma.task.findMany({
-        where: { assignedToId: user.userId },
-        include: { assignedTo: true },
+        where: { assignedMembers: { some: { id: user.userId } } },
+        include: taskInclude,
       });
     }
 
@@ -33,8 +44,16 @@ const createTask = async (req, res, next) => {
 
     const validatedData = taskSchema.parse(req.body);
 
+    const { assignedToIds, ...taskData } = validatedData;
+
     const task = await prisma.task.create({
-      data: validatedData,
+      data: {
+        ...taskData,
+        assignedMembers: {
+          connect: assignedToIds.map((id) => ({ id })),
+        },
+      },
+      include: taskInclude,
     });
 
     res.status(201).json(task);
@@ -50,6 +69,7 @@ const updateTask = async (req, res, next) => {
 
     const task = await prisma.task.findUnique({
       where: { id },
+      include: taskInclude,
     });
 
     if (!task) {
@@ -58,10 +78,7 @@ const updateTask = async (req, res, next) => {
       });
     }
 
-    if (
-      user.role === 'MEMBER' &&
-      task.assignedToId !== user.userId
-    ) {
+    if (user.role === 'MEMBER' && !task.assignedMembers?.some((member) => member.id === user.userId)) {
       return res.status(403).json({
         message: 'Forbidden',
       });
@@ -83,9 +100,20 @@ const updateTask = async (req, res, next) => {
       validatedData = { status };
     }
 
+    const { assignedToIds, ...taskData } = validatedData;
+    const updateData = { ...taskData };
+
+    if (user.role === 'ADMIN' && Array.isArray(assignedToIds)) {
+      updateData.assignedMembers = {
+        set: [],
+        connect: assignedToIds.map((memberId) => ({ id: memberId })),
+      };
+    }
+
     const updatedTask = await prisma.task.update({
       where: { id },
-      data: validatedData,
+      data: updateData,
+      include: taskInclude,
     });
 
     res.status(200).json(updatedTask);

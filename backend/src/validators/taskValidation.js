@@ -6,7 +6,7 @@ const taskSchema = z.object({
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
   status: z.enum(['TODO', 'IN_PROGRESS', 'COMPLETED']).optional(),
   dueDate: z.string().datetime().optional(),
-  assignedToId: z.string().uuid('Invalid user ID'),
+  assignedToIds: z.array(z.string().uuid('Invalid user ID')).min(1, 'Assign at least one user'),
 });
 
 module.exports = {
