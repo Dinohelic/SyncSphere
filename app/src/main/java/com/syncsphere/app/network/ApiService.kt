@@ -18,6 +18,9 @@ interface ApiService {
     @GET("api/users")
     suspend fun getUsers(@Header("Authorization") token: String): Response<List<UserResponse>>
 
+    @PUT("api/users/{id}/promote")
+    suspend fun promoteUser(@Header("Authorization") token: String, @Path("id") id: String): Response<PromoteUserResponse>
+
     @POST("api/tasks")
     suspend fun createTask(@Header("Authorization") token: String, @Body createTaskRequest: CreateTaskRequest): Response<TaskDto>
 

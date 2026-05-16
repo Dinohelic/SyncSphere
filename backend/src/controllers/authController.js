@@ -33,7 +33,7 @@ const registerUser = async (req, res, next) => {
         fullName: validatedData.fullName,
         email: validatedData.email,
         password: hashedPassword,
-        role: validatedData.role ?? undefined,
+        role: 'MEMBER',
       },
     });
 

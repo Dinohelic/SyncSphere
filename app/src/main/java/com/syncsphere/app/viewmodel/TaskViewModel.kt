@@ -46,6 +46,12 @@ class TaskViewModel @Inject constructor(
     private val _isUsersLoading = MutableStateFlow(false)
     val isUsersLoading: StateFlow<Boolean> = _isUsersLoading
 
+    private val _isPromotingUser = MutableStateFlow(false)
+    val isPromotingUser: StateFlow<Boolean> = _isPromotingUser
+
+    private val _promoteUserState = MutableStateFlow<Result<String>?>(null)
+    val promoteUserState: StateFlow<Result<String>?> = _promoteUserState
+
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
@@ -69,6 +75,17 @@ class TaskViewModel @Inject constructor(
             val result = userRepository.getUsers()
             _users.value = result
             _isUsersLoading.value = false
+        }
+    }
+
+    fun promoteUser(userId: String) {
+        viewModelScope.launch {
+            _isPromotingUser.value = true
+            _promoteUserState.value = userRepository.promoteUser(userId)
+            if (_promoteUserState.value?.isSuccess == true) {
+                getUsers()
+            }
+            _isPromotingUser.value = false
         }
     }
 
@@ -147,6 +164,7 @@ class TaskViewModel @Inject constructor(
         _mutationState.value = null
         _deleteState.value = null
         _errorMessage.value = null
+        _promoteUserState.value = null
     }
 }
 

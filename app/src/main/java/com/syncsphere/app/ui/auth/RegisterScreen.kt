@@ -56,7 +56,7 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
         keyboardController?.hide()
         if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
             if (password == confirmPassword) {
-                authViewModel.register(RegisterRequest(fullName.trim(), email.trim(), password))
+                authViewModel.register(RegisterRequest(fullName.trim(), email.trim(), password, role = "MEMBER"))
             } else {
                 Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
             }
