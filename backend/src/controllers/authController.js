@@ -10,6 +10,7 @@ const normalizeAuthBody = (body) => {
     fullName: source.fullName ?? source.full_name ?? source.fullname ?? source.name ?? '',
     email: (source.email ?? '').toString().trim(),
     password: source.password ?? '',
+    role: source.role ?? source.user_role ?? source.roleType ?? undefined,
   };
 };
 
@@ -22,7 +23,7 @@ const registerUser = async (req, res, next) => {
     });
 
     if (existingUser) {
-      return res.status(400).json({ message: 'Email is already in use' });
+      return res.status(409).json({ success: false, message: 'Email is already in use' });
     }
 
     const hashedPassword = await bcrypt.hash(validatedData.password, 10);
@@ -32,19 +33,24 @@ const registerUser = async (req, res, next) => {
         fullName: validatedData.fullName,
         email: validatedData.email,
         password: hashedPassword,
+        role: validatedData.role ?? undefined,
       },
     });
 
     res.status(201).json({
+      success: true,
       message: 'User registered successfully',
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt,
+      data: {
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
       },
     });
+    console.info({ event: 'user_registered', userId: user.id, email: user.email, role: user.role });
   } catch (error) {
     next(error);
   }
@@ -60,13 +66,13 @@ const loginUser = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const isPasswordValid = await bcrypt.compare(validatedData.password, user.password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
     const token = jwt.sign(
@@ -76,15 +82,19 @@ const loginUser = async (req, res, next) => {
     );
 
     res.status(200).json({
+      success: true,
       message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
+      data: {
+        token,
+        user: {
+          id: user.id,
+          fullName: user.fullName,
+          email: user.email,
+          role: user.role,
+        },
       },
     });
+    console.info({ event: 'user_login', userId: user.id, email: user.email });
   } catch (error) {
     next(error);
   }
