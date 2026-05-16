@@ -27,6 +27,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.syncsphere.app.ui.announcements.AnnouncementCard
 import com.syncsphere.app.ui.events.EventCard
 import com.syncsphere.app.ui.tasks.TaskCard
+import com.syncsphere.app.ui.components.SkeletonTaskCard
 import com.syncsphere.app.viewmodel.AnnouncementViewModel
 import com.syncsphere.app.viewmodel.EventViewModel
 import com.syncsphere.app.viewmodel.TaskViewModel
@@ -56,8 +57,16 @@ fun DashboardScreen(
     ) { paddingValues ->
         when {
             isLoading -> {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(Dimens.spacing),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.spacing)
+                ) {
+                    item { GreetingCard() }
+                    items(2) { SkeletonTaskCard() }
+                    items(3) { SkeletonTaskCard() }
                 }
             }
             else -> {

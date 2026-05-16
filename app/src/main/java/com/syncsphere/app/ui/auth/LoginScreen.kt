@@ -61,13 +61,13 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
     LaunchedEffect(loginState) {
         loginState?.let { result ->
             result.onSuccess { authResponse ->
-                authResponse.token?.let { token ->
+                authResponse.data?.token?.let { token ->
                     TokenManager.saveToken(context, token)
                     TokenManager.saveUserProfile(
                         context = context,
-                        fullName = authResponse.user?.fullName,
-                        email = authResponse.user?.email,
-                        role = authResponse.user?.role
+                        fullName = authResponse.data.user?.fullName,
+                        email = authResponse.data.user?.email,
+                        role = authResponse.data.user?.role
                     )
                     navController.navigate(Routes.MAIN) {
                         popUpTo(Routes.LOGIN) { inclusive = true }

@@ -23,9 +23,9 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
+import com.syncsphere.app.ui.components.SkeletonTaskCard
+import com.syncsphere.app.ui.components.StatusChip
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.DropdownMenuItem
@@ -126,9 +126,12 @@ fun TasksScreen(
             Spacer(modifier = Modifier.size(Dimens.spacing))
 
             Crossfade(targetState = isLoading, label = "tasks_loading_transition") { loading ->
-                if (loading) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
+                    if (loading) {
+                    // Show skeleton placeholders for better perceived performance
+                    LazyColumn(verticalArrangement = Arrangement.spacedBy(Dimens.spacing_sm)) {
+                        items(4) {
+                            SkeletonTaskCard()
+                        }
                     }
                 } else {
                     val source = tasks?.getOrNull().orEmpty()
@@ -239,21 +242,13 @@ fun TaskCard(
 
                 Spacer(modifier = Modifier.size(Dimens.spacing_sm))
                 Row(horizontalArrangement = Arrangement.spacedBy(Dimens.spacing_sm)) {
-                    AssistChip(
-                        onClick = { statusExpanded = true },
-                        label = { Text(status.replace("_", " ")) },
-                        colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
-                            containerColor = statusColor(status).copy(alpha = 0.14f),
-                            labelColor = statusColor(status)
-                        )
+                    StatusChip(
+                        text = status.replace("_", " "),
+                        color = statusColor(status)
                     )
-                    AssistChip(
-                        onClick = {},
-                        label = { Text(priority) },
-                        colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(
-                            containerColor = priorityColor(priority).copy(alpha = 0.14f),
-                            labelColor = priorityColor(priority)
-                        )
+                    StatusChip(
+                        text = priority,
+                        color = priorityColor(priority)
                     )
                 }
 
