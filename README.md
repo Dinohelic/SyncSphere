@@ -30,7 +30,7 @@ SyncSphere bridges the gap between scattered tools by unifying task tracking, ev
 
 Scan the QR code to download and install the app on your Android device:
 
-<img src="syncsphere_qr.png" alt="Scan to download SyncSphere APK" width="180"/>
+<img src="app/images/syncsphere_qr.png" alt="Scan to download SyncSphere APK" width="180"/>
 
 > ⚠️ You may need to enable **"Install from unknown sources"** in your Android settings.
 
