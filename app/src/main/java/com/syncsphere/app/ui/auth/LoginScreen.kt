@@ -1,38 +1,48 @@
 package com.syncsphere.app.ui.auth
 
-import android.widget.Toast
 import android.util.Patterns
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
-import kotlinx.coroutines.launch
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.syncsphere.app.models.LoginRequest
 import com.syncsphere.app.navigation.Routes
+import com.syncsphere.app.ui.components.PrimaryButton
 import com.syncsphere.app.utils.TokenManager
 import com.syncsphere.app.viewmodel.AuthViewModel
-import com.syncsphere.app.ui.components.PrimaryButton
-import com.syncsphere.app.ui.theme.Dimens
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hiltViewModel()) {
@@ -88,78 +98,76 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
     }
 
     Scaffold(snackbarHost = { SnackbarHost(hostState = snackbarHostState) }) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentAlignment = Alignment.Center
-        ) {
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+        Box(modifier = Modifier.padding(paddingValues)) {
+            AuthScreenSurface(
+                title = "Welcome back",
+                subtitle = "Sign in to continue to SyncSphere"
             ) {
-                Column(
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .verticalScroll(rememberScrollState())
-                        .imePadding(),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(text = "Login", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(modifier = Modifier.height(Dimens.spacing))
-                    OutlinedTextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Email") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                        isError = emailError,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Email,
-                            imeAction = ImeAction.Next
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Down) }
-                        )
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email address") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    isError = emailError,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Email,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
                     )
-                    if (emailError) {
-                        Text("Email is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Spacer(modifier = Modifier.height(Dimens.spacing_sm))
-                    OutlinedTextField(
-                        value = password,
-                        onValueChange = { password = it },
-                        label = { Text("Password") },
-                        modifier = Modifier.fillMaxWidth(),
-                        visualTransformation = PasswordVisualTransformation(),
-                        singleLine = true,
-                        isError = passwordError,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = { submitLogin() }
-                        )
-                    )
-                    if (passwordError) {
-                        Text("Password is required", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                    }
-                    Spacer(modifier = Modifier.height(Dimens.spacing))
-                    PrimaryButton(
-                        text = "Login",
-                        onClick = { submitLogin() },
-                        loading = isLoading,
-                        enabled = canSubmit
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                )
+                if (emailError) {
                     Text(
-                        text = "Don't have an account? Register",
-                        modifier = Modifier.clickable { navController.navigate(Routes.REGISTER) }
+                        text = "Email is required",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp)
                     )
                 }
+                Spacer(modifier = Modifier.height(14.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Password") },
+                    modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true,
+                    isError = passwordError,
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = { submitLogin() }
+                    )
+                )
+                if (passwordError) {
+                    Text(
+                        text = "Password is required",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 6.dp)
+                    )
+                }
+                Spacer(modifier = Modifier.height(22.dp))
+                PrimaryButton(
+                    text = "Sign in",
+                    onClick = { submitLogin() },
+                    loading = isLoading,
+                    enabled = canSubmit
+                )
+                Spacer(modifier = Modifier.height(18.dp))
+                Text(
+                    text = "Don't have an account? Sign up",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .clickable { navController.navigate(Routes.REGISTER) }
+                        .padding(vertical = 4.dp)
+                )
             }
         }
     }
