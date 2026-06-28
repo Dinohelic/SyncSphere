@@ -20,30 +20,22 @@ class AuthRepository @Inject constructor(private val apiService: ApiService) {
                 } else {
                     val raw = response.errorBody()?.string()
                     val message = try {
-                        if (raw != null) {
+                        if (raw == null) {
+                            "Unable to connect. Please try again."
+                        } else if (raw.trim().startsWith("<")) {
+                            // HTML or unexpected payload from server
+                            "Unable to connect. Please try again."
+                        } else {
                             val obj = JSONObject(raw)
                             val msg = obj.optString("message", null)
-                            if (msg != null && msg.isNotBlank()) {
-                                // Try to include validation issues if present
-                                val issues = obj.optJSONArray("issues")
-                                if (issues != null && issues.length() > 0) {
-                                    val sb = StringBuilder(msg)
-                                    for (i in 0 until issues.length()) {
-                                        val it = issues.optJSONObject(i)
-                                        if (it != null) {
-                                            sb.append("\n• ").append(it.optString("message", it.toString()))
-                                        } else {
-                                            sb.append("\n• ").append(issues.optString(i))
-                                        }
-                                    }
-                                    sb.toString()
-                                } else {
-                                    msg
-                                }
-                            } else raw
-                        } else null
+                            if (!msg.isNullOrBlank()) msg else raw
+                        }
                     } catch (e: Exception) {
-                        raw
+                        if (!raw.isNullOrBlank() && raw.trim().startsWith("<")) {
+                            "Unable to connect. Please try again."
+                        } else {
+                            raw ?: "Unable to connect. Please try again."
+                        }
                     }
 
                     Result.failure(Exception(message ?: "Login failed"))
@@ -63,12 +55,20 @@ class AuthRepository @Inject constructor(private val apiService: ApiService) {
                 } else {
                     val raw = response.errorBody()?.string()
                     val message = try {
-                        if (raw != null) {
+                        if (raw == null) {
+                            "Unable to connect. Please try again."
+                        } else if (raw.trim().startsWith("<")) {
+                            "Unable to connect. Please try again."
+                        } else {
                             val obj = JSONObject(raw)
                             obj.optString("message", raw)
-                        } else null
+                        }
                     } catch (e: Exception) {
-                        raw
+                        if (!raw.isNullOrBlank() && raw.trim().startsWith("<")) {
+                            "Unable to connect. Please try again."
+                        } else {
+                            raw ?: "Unable to connect. Please try again."
+                        }
                     }
 
                     Result.failure(Exception(message ?: "Registration failed"))

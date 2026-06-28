@@ -1,8 +1,14 @@
 const { ZodError } = require('zod');
 const { Prisma } = require('@prisma/client');
 
-const formatZodErrors = (zodErr) =>
-  zodErr.errors.map((e) => ({ field: e.path.join('.') || null, message: e.message }));
+const formatZodMessage = (zodErr) => {
+  try {
+    const messages = zodErr.errors.map((e) => e.message).filter(Boolean);
+    return messages.length ? messages.join('. ') : 'Invalid input';
+  } catch (e) {
+    return 'Invalid input';
+  }
+};
 
 const errorHandler = (err, req, res, next) => {
   // Structured logging (avoid sensitive data)
@@ -16,10 +22,10 @@ const errorHandler = (err, req, res, next) => {
 
   // Zod validation errors
   if (err instanceof ZodError) {
+    const message = formatZodMessage(err);
     return res.status(400).json({
       success: false,
-      message: 'Validation failed',
-      errors: formatZodErrors(err),
+      message,
     });
   }
 

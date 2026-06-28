@@ -21,7 +21,25 @@ class UserRepository @Inject constructor(
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception(response.errorBody()?.string() ?: "Failed to get users"))
+                val raw = response.errorBody()?.string()
+                val message = try {
+                    if (raw == null) {
+                        "Unable to connect. Please try again."
+                    } else if (raw.trim().startsWith("<")) {
+                        "Unable to connect. Please try again."
+                    } else {
+                        val obj = JSONObject(raw)
+                        obj.optString("message", raw)
+                    }
+                } catch (e: Exception) {
+                    if (!raw.isNullOrBlank() && raw.trim().startsWith("<")) {
+                        "Unable to connect. Please try again."
+                    } else {
+                        raw ?: "Unable to connect. Please try again."
+                    }
+                }
+
+                Result.failure(Exception(message ?: "Failed to get users"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -37,10 +55,21 @@ class UserRepository @Inject constructor(
             } else {
                 val raw = response.errorBody()?.string()
                 val message = try {
-                    raw?.let { JSONObject(it).optString("message", it) }
-                } catch (_: Exception) {
-                    raw
+                    if (raw == null) {
+                        "Unable to connect. Please try again."
+                    } else if (raw.trim().startsWith("<")) {
+                        "Unable to connect. Please try again."
+                    } else {
+                        JSONObject(raw).optString("message", raw)
+                    }
+                } catch (e: Exception) {
+                    if (!raw.isNullOrBlank() && raw.trim().startsWith("<")) {
+                        "Unable to connect. Please try again."
+                    } else {
+                        raw ?: "Unable to connect. Please try again."
+                    }
                 }
+
                 Result.failure(Exception(message ?: "Failed to promote user"))
             }
         } catch (e: Exception) {

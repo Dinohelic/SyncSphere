@@ -1,6 +1,7 @@
 package com.syncsphere.app.ui.auth
 
 import android.widget.Toast
+import android.util.Patterns
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.foundation.clickable
@@ -44,7 +45,7 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
     val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-    val emailError = email.isBlank()
+    val emailError = email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
     val passwordError = password.isBlank()
     val canSubmit = !emailError && !passwordError && !isLoading
 
@@ -54,7 +55,13 @@ fun LoginScreen(navController: NavController, authViewModel: AuthViewModel = hil
         if (canSubmit) {
             authViewModel.login(LoginRequest(email.trim(), password))
         } else {
-            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            val message = when {
+                email.isBlank() -> "Please enter your email"
+                !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches() -> "Please enter a valid email address"
+                password.isBlank() -> "Please enter your password"
+                else -> "Please fix the highlighted fields"
+            }
+            scope.launch { snackbarHostState.showSnackbar(message) }
         }
     }
 

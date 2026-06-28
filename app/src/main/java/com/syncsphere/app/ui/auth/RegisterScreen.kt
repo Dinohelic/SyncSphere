@@ -9,6 +9,10 @@ import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
+import android.util.Patterns
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -42,38 +46,44 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
     val isLoading by authViewModel.isLoading.collectAsState()
     val registerState by authViewModel.registerState.collectAsState()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
 
-    val fullNameError = fullName.isBlank()
-    val emailError = email.isBlank()
-    val passwordError = password.isBlank()
+    val fullNameError = fullName.isBlank() || fullName.trim().length < 2
+    val emailError = email.isBlank() || !Patterns.EMAIL_ADDRESS.matcher(email.trim()).matches()
+    val passwordError = password.isBlank() || password.length < 6
     val confirmPasswordError = confirmPassword.isBlank() || confirmPassword != password
     val canSubmit = !fullNameError && !emailError && !passwordError && !confirmPasswordError && !isLoading
 
     fun submitRegister() {
         focusManager.clearFocus()
         keyboardController?.hide()
-        if (fullName.isNotBlank() && email.isNotBlank() && password.isNotBlank() && confirmPassword.isNotBlank()) {
-            if (password == confirmPassword) {
-                authViewModel.register(RegisterRequest(fullName.trim(), email.trim(), password, role = "MEMBER"))
-            } else {
-                Toast.makeText(context, "Passwords do not match", Toast.LENGTH_SHORT).show()
-            }
+        if (canSubmit) {
+            authViewModel.register(RegisterRequest(fullName.trim(), email.trim(), password, role = "MEMBER"))
         } else {
-            Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+            val message = when {
+                fullNameError -> "Please enter your full name (minimum 2 characters)"
+                emailError -> "Please enter a valid email address"
+                passwordError -> "Password must contain at least 6 characters"
+                confirmPasswordError -> "Passwords do not match"
+                else -> "Please fix the highlighted fields"
+            }
+            scope.launch { snackbarHostState.showSnackbar(message) }
         }
     }
 
     LaunchedEffect(registerState) {
         registerState?.let { result ->
             result.onSuccess {
-                Toast.makeText(context, "Registration successful", Toast.LENGTH_SHORT).show()
+                scope.launch { snackbarHostState.showSnackbar("Account created successfully") }
                 navController.navigate(Routes.LOGIN) {
                     popUpTo(Routes.REGISTER) { inclusive = true }
                 }
             }.onFailure {
-                Toast.makeText(context, it.message, Toast.LENGTH_SHORT).show()
+                val msg = it.message ?: "Unable to connect. Please try again."
+                scope.launch { snackbarHostState.showSnackbar(msg) }
             }
         }
     }
@@ -95,6 +105,7 @@ fun RegisterScreen(navController: NavController, authViewModel: AuthViewModel = 
                     .imePadding(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                SnackbarHost(hostState = snackbarHostState)
                 Text(text = "Register", style = MaterialTheme.typography.headlineMedium)
                 Spacer(modifier = Modifier.height(Dimens.spacing))
                 OutlinedTextField(

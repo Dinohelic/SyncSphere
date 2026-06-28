@@ -8,22 +8,22 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Business
-import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -53,15 +53,18 @@ fun ProfileScreen(navController: NavController, taskViewModel: TaskViewModel = h
         }
     }
 
+    val scope = rememberCoroutineScope()
+
     LaunchedEffect(promoteUserState) {
-        promoteUserState?.fold(
-            onSuccess = {
-                snackbarHostState.showSnackbar(it)
-            },
-            onFailure = { error ->
-                snackbarHostState.showSnackbar(error.message ?: "Promotion failed")
+        promoteUserState?.let { result ->
+            if (result.isSuccess) {
+                val msg = result.getOrNull() ?: "Promotion successful"
+                scope.launch { snackbarHostState.showSnackbar(msg) }
+            } else {
+                val err = result.exceptionOrNull()?.message ?: "Promotion failed"
+                scope.launch { snackbarHostState.showSnackbar(err) }
             }
-        )
+        }
     }
 
     Scaffold(
@@ -146,7 +149,7 @@ fun ProfileScreen(navController: NavController, taskViewModel: TaskViewModel = h
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFDC2626))
                 ) {
-                    Icon(Icons.Default.Logout, contentDescription = null)
+                    Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(text = "Logout")
                 }
@@ -186,7 +189,9 @@ fun ProfileScreen(navController: NavController, taskViewModel: TaskViewModel = h
                             }
                         }
                     } else {
-                        items(memberList, key = { it.id }) { user ->
+                        items(
+                            items = memberList
+                        ) { user: UserResponse ->
                             AdminUserCard(
                                 user = user,
                                 isPromoting = isPromotingUser,
@@ -241,4 +246,3 @@ fun AdminUserCard(
         }
     }
 }
-
