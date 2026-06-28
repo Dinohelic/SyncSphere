@@ -231,5 +231,5 @@ This project is licensed under the **ISC License** — see the [LICENSE](LICENSE
 ---
 
 <div align="center">
-  Built with ❤️ by <a href="https://github.com/dinohelic">Deepak Yadav</a>
+  Built by <a href="https://github.com/dinohelic">Deepak Yadav</a>
 </div>
